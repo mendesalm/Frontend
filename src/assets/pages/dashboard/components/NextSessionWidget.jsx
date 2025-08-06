@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import './NextSessionWidget.css';
+import { getFileUrl } from '../../../../utils/fileUtils';
 
 
 
@@ -28,12 +29,12 @@ const NextSessionWidget = ({ session }) => {
       <p className="session-type">{tipoSessao} - {subtipoSessao}</p>
       <div className="session-links">
         {edital && edital.caminhoPdfLocal && (
-          <a href={`http://localhost:3001${edital.caminhoPdfLocal}`} target="_blank" rel="noopener noreferrer" className="btn-document">
+          <a href={getFileUrl(edital.caminhoPdfLocal)} target="_blank" rel="noopener noreferrer" className="btn-document">
             Ver Edital
           </a>
         )}
         {convite && convite.caminhoPdfLocal && (
-          <a href={`http://localhost:3001${convite.caminhoPdfLocal}`} target="_blank" rel="noopener noreferrer" className="btn-document">
+          <a href={getFileUrl(convite.caminhoPdfLocal)} target="_blank" rel="noopener noreferrer" className="btn-document">
             Ver Convite
           </a>
         )}

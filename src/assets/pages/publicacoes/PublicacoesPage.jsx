@@ -11,6 +11,7 @@ import "./PublicacoesPage.css";
 import "../../styles/TableStyles.css";
 import { showSuccessToast, showErrorToast } from "../../../utils/notifications";
 import logo from "../../images/ArticleIcon.png";
+import { getFileUrl } from "../../../utils/fileUtils";
 
 const PublicacoesPage = () => {
   const {
@@ -41,7 +42,7 @@ const PublicacoesPage = () => {
   };
 
   const handleCardClick = (path) => {
-    window.open(`http://localhost:3001/${path}`, "_blank", "noreferrer");
+    window.open(getFileUrl(path), "_blank", "noreferrer");
   };
 
   return (

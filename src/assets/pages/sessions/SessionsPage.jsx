@@ -16,6 +16,7 @@ import { formatDateForInput, formatFullDate } from "~/utils/dateUtils";
 import { showSuccessToast, showErrorToast } from "~/utils/notifications";
 import Modal from "~/components/modal/Modal";
 import SessionForm from "./SessionForm";
+import { getFileUrl } from "../../../utils/fileUtils";
 
 import "./SessionsPage.css";
 
@@ -378,12 +379,9 @@ const SessionsPage = () => {
     }
   };
 
-  const BASE_URL_DOCUMENTS = "http://localhost:3001"; // URL base para os documentos
-
   const handleViewDocument = (relativePath) => {
     if (relativePath) {
-      const fullUrl = `${BASE_URL_DOCUMENTS}${relativePath}`;
-      window.open(fullUrl, "_blank");
+      window.open(getFileUrl(relativePath), "_blank");
     } else {
       showErrorToast("Documento não disponível.");
     }

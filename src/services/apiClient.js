@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Cria a instância base do cliente Axios
 const apiClient = axios.create({
-  baseURL: "/api",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
 });
 
 // Interceptor de Requisição: Adiciona o token a cada chamada

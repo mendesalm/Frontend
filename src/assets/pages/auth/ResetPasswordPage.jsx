@@ -12,7 +12,7 @@ const ResetPasswordPage = () => {
 
   const { token } = useParams(); // Pega o token da URL
   const navigate = useNavigate();
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = import.meta.env.VITE_API_BASE_URL;
 
   const handleSubmit = async (event) => {
     event.preventDefault();

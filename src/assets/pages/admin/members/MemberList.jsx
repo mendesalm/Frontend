@@ -143,7 +143,7 @@ const MemberList = () => {
                         src={
                           member.FotoPessoal_Caminho.startsWith("http")
                             ? member.FotoPessoal_Caminho
-                            : `/uploads/${member.FotoPessoal_Caminho.replace(
+                            : `${import.meta.env.VITE_API_BASE_URL}/uploads/${member.FotoPessoal_Caminho.replace(
                                 /^(?:\/uploads\/|uploads\/)/,
                                 ""
                               )}`

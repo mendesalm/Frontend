@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import apiClient from "../../services/apiClient";
+import { getFileUrl } from "../../utils/fileUtils";
 import "../../assets/styles/FormStyles.css";
 
 const GenericFileForm = ({
@@ -68,14 +69,6 @@ const GenericFileForm = ({
       formData.append("documento", data.documento[0]);
     }
     onSave(formData);
-  };
-
-  const getFileUrl = (path) => {
-    if (!path) return "#";
-    const baseURL = apiClient.defaults.baseURL.startsWith("http")
-      ? apiClient.defaults.baseURL
-      : window.location.origin;
-    return `${baseURL}/${path}`.replace("/api/", "/");
   };
 
   return (

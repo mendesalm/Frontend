@@ -1,12 +1,13 @@
-export const getFileUrl = (path, isApi = false) => {
-  if (!path) return "#";
-  // Não remove /api/ se for uma requisição de API
-  const sanitizedPath = isApi
-    ? path
-    : path.startsWith("/api/")
-    ? path.substring(5)
-    : path;
-  return `${window.location.origin}${
-    sanitizedPath.startsWith("/") ? "" : "/"
-  }${sanitizedPath}`;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
+export const getFileUrl = (path) => {
+  if (!path) {
+    return "#";
+  }
+
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+
+  return `${API_BASE_URL}${path}`;
 };

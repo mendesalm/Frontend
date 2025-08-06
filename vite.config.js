@@ -10,17 +10,6 @@ export default defineConfig({
     },
   },
   server: {
-    proxy: {
-      // Proxy para as chamadas de API (ex: /api/membros)
-      "/api": {
-        target: "http://localhost:3001",
-        changeOrigin: true,
-      },
-      // Proxy para a pasta de uploads (áudios, imagens, etc.)
-      "/uploads": {
-        target: "http://localhost:3001",
-        changeOrigin: true,
-      },
-    },
+    
   },
 });

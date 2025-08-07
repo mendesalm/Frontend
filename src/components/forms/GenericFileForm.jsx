@@ -153,21 +153,23 @@ const GenericFileForm = ({
         <label htmlFor="documento-upload">
           {isEditing ? "Substituir Ficheiro (Opcional)" : "Ficheiro"}
         </label>
-        <label
-          htmlFor="documento"
-          className="custom-file-upload-label btn btn-secondary"
-        >
-          Selecionar Ficheiro
-        </label>
-        <input
-          id="documento"
-          type="file"
-          {...register("documento")}
-          className="visually-hidden"
-        />
-        {selectedFileName && (
-          <span className="file-name-display">{selectedFileName}</span>
-        )}
+        <div className="file-upload-container">
+          <label
+            htmlFor="documento"
+            className="custom-file-upload-label btn btn-secondary"
+          >
+            Selecionar Ficheiro
+          </label>
+          <input
+            id="documento"
+            type="file"
+            {...register("documento")}
+            className="file-input-hidden"
+          />
+          {selectedFileName && (
+            <span className="file-name-display">{selectedFileName}</span>
+          )}
+        </div>
         {errors.documento && (
           <p className="form-error-message">{errors.documento.message}</p>
         )}

@@ -101,6 +101,7 @@ export default function BalaustreForm({
   onSave,
   isSubmitting,
   readOnly,
+  onDownload,
 }) {
   const [form, setForm] = useState(initialState);
   const [logoEsquerdo, setLogoEsquerdo] = useState(defaultLogo1);
@@ -646,6 +647,11 @@ export default function BalaustreForm({
         <button type="submit" disabled={isSubmitting || readOnly}>
           {isSubmitting ? "Salvando..." : "Salvar Alterações"}
         </button>
+        {onDownload && (
+          <button type="button" onClick={onDownload} className="download-button">
+            Baixar PDF
+          </button>
+        )}
       </div>
     </form>
   );

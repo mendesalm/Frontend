@@ -140,6 +140,7 @@ const GestaoMusicasPage = () => {
             setIsUploadModalOpen(false);
             refetch();
           }}
+          onCancel={() => setIsUploadModalOpen(false)} // Adicionado
         />
       </Modal>
 

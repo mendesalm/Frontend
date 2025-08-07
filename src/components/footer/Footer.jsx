@@ -3,9 +3,11 @@ import './Footer.css';
 
 const Footer = () => {
   return (
-    <footer className="main-footer">
-      <p>&copy; {new Date().getFullYear()} Loja Maçônica João Pedro Junqueira nº2181. Todos os direitos reservados.</p>
-      <p>Desenvolvido por André Luiz Mendes</p>
+    <footer className="footer-section">
+      <div className="footer-content">
+        <p>&copy; {new Date().getFullYear()} Loja Maçônica João Pedro Junqueira nº 2181. Todos os direitos reservados.</p>
+        <p>Desenvolvido por André Luiz Mendes</p>
+      </div>
     </footer>
   );
 };

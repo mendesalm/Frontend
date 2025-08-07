@@ -117,6 +117,20 @@ const BalaustreEditor = ({ balaustreId, refetchSession }) => {
     }
   };
 
+  const handleDownload = () => {
+    if (balaustre && balaustre.caminhoPdf) {
+      // Forçar o download em vez de abrir em uma nova aba
+      const link = document.createElement("a");
+      link.href = balaustre.caminhoPdf;
+      link.setAttribute("download", `Balaustre_${balaustre.id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      showErrorToast("URL do PDF não encontrada.");
+    }
+  };
+
   if (isLoading) {
     return <h2>A carregar editor do balaústre...</h2>;
   }
@@ -201,6 +215,7 @@ const BalaustreEditor = ({ balaustreId, refetchSession }) => {
         onSave={handleSave}
         isSubmitting={isSubmitting}
         readOnly={isApproved} // Bloqueia o formulário se aprovado
+        onDownload={handleDownload}
       />
       </FormPageLayout>
       <ConfirmationModal

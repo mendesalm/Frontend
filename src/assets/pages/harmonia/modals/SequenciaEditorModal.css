@@ -1,0 +1,123 @@
+/* src/assets/pages/harmonia/modals/SequenciaEditorModal.css */
+
+.sequencia-editor-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  min-height: 400px; /* Garante que as colunas tenham altura para o DND */
+}
+
+.playlists-disponiveis-column,
+.sequencia-atual-column {
+  background: var(--elevation-1);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.playlists-disponiveis-column h4,
+.sequencia-atual-column h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.playlist-list {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-right: 5px; /* Espaço para a scrollbar */
+}
+
+.playlist-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  margin-bottom: 8px;
+  background-color: var(--background-color-light);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.playlist-item.draggable {
+  cursor: grab;
+}
+
+.playlist-item.draggable:hover {
+  background-color: var(--elevation-2);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.playlist-item.draggable.is-dragging {
+  opacity: 0.6;
+  border-style: dashed;
+  background-color: var(--info-color-translucent);
+  cursor: grabbing;
+}
+
+.drag-handle {
+  margin-right: 10px;
+  color: var(--text-secondary-color);
+  cursor: grab;
+}
+
+.drag-instruction {
+  font-size: 0.85rem;
+  color: var(--text-secondary-color);
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+  padding-top: 1rem;
+}
+
+.btn-action.btn-add {
+  background-color: var(--success-color);
+  color: var(--text-color);
+}
+
+.btn-action.btn-delete {
+  background-color: var(--danger-color);
+  color: var(--text-color);
+}
+
+/* New styles for move buttons */
+.playlist-item-content {
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+}
+
+.playlist-item-actions {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.btn-action.btn-move-up,
+.btn-action.btn-move-down {
+  background-color: var(--secondary-color);
+  padding: 0.3rem 0.5rem;
+}
+
+.btn-action.btn-move-up:hover,
+.btn-action.btn-move-down:hover {
+  background-color: var(--secondary-color-dark);
+}
+
+.btn-action.btn-move-up:disabled,
+.btn-action.btn-move-down:disabled {
+  background-color: var(--background-color-dark);
+  cursor: not-allowed;
+  opacity: 0.6;
+}

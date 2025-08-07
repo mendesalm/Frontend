@@ -10,7 +10,7 @@ import apiClient from "./apiClient";
  * CORREÇÃO: Retorna a promessa completa do Axios.
  */
 export const getTiposSessao = () => {
-  return apiClient.get("/harmonia/tipos-sessao");
+  return apiClient.get("/harmonia/tipos-sessao", { params: { include: 'playlists' } });
 };
 
 /**
@@ -162,4 +162,46 @@ export const updateMusicasPlaylist = (playlistId, musicaIds) => {
   return apiClient.put(`/harmonia/playlists/${playlistId}/musicas`, {
     musicaIds,
   });
+};
+
+/**
+ * Adiciona uma música a uma playlist existente.
+ * PUT /api/harmonia/playlists/:playlistId/add-musica
+ * @param {string} playlistId - O ID da playlist.
+ * @param {string} musicaId - O ID da música a ser adicionada.
+ */
+export const addMusicaToPlaylist = (playlistId, musicaId) => {
+  return apiClient.put(`/harmonia/playlists/${playlistId}/add-musica`, { musicaId });
+};
+
+/**
+ * Adiciona uma música a uma playlist específica.
+ * POST /api/harmonia/playlists/{ID_DA_PLAYLIST}/musicas
+ * @param {string} playlistId - O ID da playlist.
+ * @param {string} musicaId - O ID da música a ser adicionada.
+ */
+export const addMusicToPlaylist = async (playlistId, musicaId) => {
+  try {
+    const response = await apiClient.post(`/harmonia/playlists/${playlistId}/musicas`, { musicaId });
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao adicionar música à playlist:', error);
+    throw error;
+  }
+};
+
+/**
+ * Remove uma música de uma playlist específica.
+ * DELETE /api/harmonia/playlists/{ID_DA_PLAYLIST}/musicas/{ID_DA_MUSICA}
+ * @param {string} playlistId - O ID da playlist.
+ * @param {string} musicaId - O ID da música a ser removida.
+ */
+export const removeMusicFromPlaylist = async (playlistId, musicaId) => {
+  try {
+    const response = await apiClient.delete(`/harmonia/playlists/${playlistId}/musicas/${musicaId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao remover música da playlist:', error);
+    throw error;
+  }
 };

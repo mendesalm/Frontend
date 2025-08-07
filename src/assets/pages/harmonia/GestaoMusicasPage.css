@@ -73,3 +73,7 @@
 .btn-delete {
   background-color: var(--danger-color);
 }
+
+.btn-stop {
+  background-color: var(--secondary-color);
+}

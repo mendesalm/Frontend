@@ -1,47 +1,45 @@
-import React, { useState, useEffect, useRef } from "react";
+// src/assets/pages/harmonia/MontagemSequenciaPage.jsx (Refatorado)
+
+import React, { useState, useMemo } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { useDataFetching } from "../../../hooks/useDataFetching";
 import {
   getTiposSessao,
   createTipoSessao,
+  updateTipoSessao,
   deleteTipoSessao,
-  getPlaylists,
-  setSequenciaPlaylist, // CORREÇÃO: Importando a função com o nome correto
 } from "../../../services/harmoniaService";
 import { showSuccessToast, showErrorToast } from "../../../utils/notifications";
-import "./MontagemSequenciaPage.css";
+import ConfirmationModal from "../../../components/modal/ConfirmationModal";
+import LoadingOverlay from "../../../components/layout/LoadingOverlay";
+import "./MontagemSequenciaPage.css"; // Estilos serão atualizados/criados
 import "../../../assets/styles/FormStyles.css";
 
+import TipoSessaoModal from './modals/TipoSessaoModal';
+import SequenciaEditorModal from './modals/SequenciaEditorModal';
+
 const ItemTypes = {
-  PLAYLIST: "playlist",
+  TIPO_SESSAO_ROW: "tipo_sessao_row",
 };
 
-// Componente para um item de playlist arrastável
-const DraggablePlaylistItem = ({ playlist, index, movePlaylist, onDelete }) => {
-  const ref = useRef(null);
+// Componente da Linha da Tabela Arrastável
+const DraggableTipoSessaoRow = ({ tipoSessao, index, moveRow, onEdit, onManageSequence, onDelete }) => {
+  const ref = React.useRef(null);
 
   const [, drop] = useDrop({
-    accept: ItemTypes.PLAYLIST,
+    accept: ItemTypes.TIPO_SESSAO_ROW,
     hover(item) {
-      if (!ref.current) {
-        return;
+      if (item.index !== index) {
+        moveRow(item.index, index);
+        item.index = index;
       }
-      const dragIndex = item.index;
-      const hoverIndex = index;
-
-      if (dragIndex === hoverIndex) {
-        return;
-      }
-
-      movePlaylist(dragIndex, hoverIndex);
-      item.index = hoverIndex;
     },
   });
 
   const [{ isDragging }, drag] = useDrag({
-    type: ItemTypes.PLAYLIST,
-    item: { id: playlist.id, index },
+    type: ItemTypes.TIPO_SESSAO_ROW,
+    item: { id: tipoSessao.id, index },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
@@ -49,224 +47,176 @@ const DraggablePlaylistItem = ({ playlist, index, movePlaylist, onDelete }) => {
 
   drag(drop(ref));
 
+  const trClasses = [
+    isDragging ? "dragging" : "",
+    tipoSessao.playlists?.length === 0 ? "tipo-sessao-vazio" : ""
+  ].join(" ").trim();
+
   return (
-    <div
-      ref={ref}
-      className="playlist-item draggable"
-      style={{ opacity: isDragging ? 0.5 : 1 }}
-    >
-      <span>{index + 1}. {playlist.nome}</span>
-      <button
-        className="btn-action btn-delete"
-        onClick={() => onDelete(playlist.id)}
-      >
-        ×
-      </button>
-    </div>
+    <tr ref={ref} className={trClasses}>
+      <td>{tipoSessao.nome}</td>
+      <td>{tipoSessao.playlists?.length || 0}</td>
+      <td className="actions-cell">
+        <button onClick={() => onManageSequence(tipoSessao)} className="btn-action btn-manage-sequence">Gerenciar Sequência</button>
+        <button onClick={() => onEdit(tipoSessao)} className="btn-action btn-edit">Editar</button>
+        <button onClick={() => onDelete(tipoSessao)} className="btn-action btn-delete">Excluir</button>
+      </td>
+    </tr>
   );
 };
 
+
 const MontagemSequenciaPage = () => {
   const {
-    data: tiposSessao = [],
-    isLoading: loadingTipos,
-    refetch: refetchTiposSessao,
+    data: tiposSessao,
+    isLoading,
+    error,
+    refetch,
   } = useDataFetching(getTiposSessao);
-  const { data: allPlaylists = [], isLoading: loadingPlaylists } =
-    useDataFetching(getPlaylists);
 
-  const [selectedTipoSessao, setSelectedTipoSessao] = useState(null);
-  const [sequencia, setSequencia] = useState([]);
-  const [newTipoSessaoName, setNewTipoSessaoName] = useState("");
+  const [filtro, setFiltro] = useState("");
+  
+  // Estados para os modais
+  const [isTipoSessaoModalOpen, setIsTipoSessaoModalOpen] = useState(false);
+  const [isSequenciaEditorModalOpen, setIsSequenciaEditorModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  
+  const [currentTipoSessao, setCurrentTipoSessao] = useState(null);
 
-  useEffect(() => {
-    console.log("TIPO DE SESSÃO SELECIONADO:", selectedTipoSessao);
-    const playlistsDaSequencia =
-      selectedTipoSessao?.playlists?.sort(
-        (a, b) => a.TipoSessaoPlaylists.ordem - b.TipoSessaoPlaylists.ordem
-      ) || [];
-    console.log("PLAYLISTS ENCONTRADAS NA SEQUÊNCIA:", playlistsDaSequencia);
-    setSequencia(playlistsDaSequencia);
-  }, [selectedTipoSessao]);
+  const tiposSessaoFiltrados = useMemo(() => {
+    if (!tiposSessao) return [];
+    return tiposSessao.filter((ts) =>
+      ts.nome.toLowerCase().includes(filtro.toLowerCase())
+    );
+  }, [tiposSessao, filtro]);
 
-  const handleSelectTipoSessao = (tipo) => {
-    const tipoSessaoCompleto = tiposSessao.find((t) => t.id === tipo.id);
-    setSelectedTipoSessao(tipoSessaoCompleto);
+  // Placeholder para a função de mover a linha
+  const moveRow = (fromIndex, toIndex) => {
+    console.log(`Mover tipo de sessão da posição ${fromIndex} para ${toIndex}`);
+    // Lógica de reordenação a ser implementada
   };
 
-  const handleCreateTipoSessao = async (e) => {
-    e.preventDefault();
-    if (!newTipoSessaoName.trim())
-      return showErrorToast("O nome não pode estar vazio.");
+  // Funções para abrir os modais
+  const handleOpenCreateModal = () => {
+    setCurrentTipoSessao(null);
+    setIsTipoSessaoModalOpen(true);
+  };
+
+  const handleOpenEditModal = (tipoSessao) => {
+    setCurrentTipoSessao(tipoSessao);
+    setIsTipoSessaoModalOpen(true);
+  };
+  
+  const handleOpenManageSequenceModal = (tipoSessao) => {
+    setCurrentTipoSessao(tipoSessao);
+    setIsSequenciaEditorModalOpen(true);
+  };
+
+  const handleOpenDeleteModal = (tipoSessao) => {
+    setCurrentTipoSessao(tipoSessao);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleSaveTipoSessao = async (tipoSessaoData) => {
     try {
-      await createTipoSessao({ nome: newTipoSessaoName });
-      setNewTipoSessaoName("");
-      refetchTiposSessao();
-      showSuccessToast("Tipo de Sessão criado com sucesso!");
-    } catch (error) {
-      showErrorToast("Erro ao criar o Tipo de Sessão.");
-      console.error(error);
-    }
-  };
-
-  const handleDeleteTipoSessao = async (id) => {
-    if (window.confirm("Tem certeza que deseja apagar este Tipo de Sessão?")) {
-      try {
-        await deleteTipoSessao(id);
-        setSelectedTipoSessao(null);
-        refetchTiposSessao();
-        showSuccessToast("Tipo de Sessão apagado.");
-      } catch (error) {
-        showErrorToast("Erro ao apagar o Tipo de Sessão.");
-        console.error(error);
+      if (tipoSessaoData.id) {
+        // Atualizar tipo de sessão existente
+        await updateTipoSessao(tipoSessaoData.id, { nome: tipoSessaoData.nome });
+        showSuccessToast("Tipo de Sessão atualizado com sucesso!");
+      } else {
+        // Criar novo tipo de sessão
+        await createTipoSessao({ nome: tipoSessaoData.nome });
+        showSuccessToast("Tipo de Sessão criado com sucesso!");
       }
+      refetch();
+      setIsTipoSessaoModalOpen(false);
+    } catch (err) {
+      showErrorToast(tipoSessaoData.id ? "Falha ao atualizar o Tipo de Sessão." : "Falha ao criar o Tipo de Sessão.");
     }
   };
 
-  const handleAddPlaylist = (playlist) => {
-    if (sequencia.find((p) => p.id === playlist.id)) return;
-    setSequencia((prev) => [...prev, playlist]);
-  };
-
-  const handleRemovePlaylist = (playlistId) => {
-    setSequencia((prev) => prev.filter((p) => p.id !== playlistId));
-  };
-
-  const movePlaylist = (fromIndex, toIndex) => {
-    const updatedSequencia = [...sequencia];
-    const [movedPlaylist] = updatedSequencia.splice(fromIndex, 1);
-    updatedSequencia.splice(toIndex, 0, movedPlaylist);
-    setSequencia(updatedSequencia);
-  };
-
-  const handleSaveSequencia = async () => {
-    if (!selectedTipoSessao)
-      return showErrorToast("Nenhum Tipo de Sessão selecionado.");
-
-    const payload = sequencia.map((playlist, index) => ({
-      playlistId: playlist.id,
-      ordem: index + 1,
-    }));
-
+  const handleDeleteConfirm = async () => {
+    if (!currentTipoSessao) return;
     try {
-      await setSequenciaPlaylist(selectedTipoSessao.id, payload);
-      showSuccessToast("Sequência salva com sucesso!");
-      refetchTiposSessao();
-    } catch (error) {
-      showErrorToast("Erro ao salvar sequência.");
-      console.error(error);
+      await deleteTipoSessao(currentTipoSessao.id);
+      showSuccessToast("Tipo de Sessão excluído com sucesso!");
+      refetch();
+      setIsDeleteModalOpen(false);
+    } catch (err) {
+      showErrorToast("Falha ao excluir o Tipo de Sessão.");
     }
   };
-
-  const playlistsDisponiveis = allPlaylists.filter(
-    (p) => !sequencia.some((s) => s.id === p.id)
-  );
-  const isLoading = loadingTipos || loadingPlaylists;
 
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="montagem-container">
-        <div className="montagem-header">
+        <div className="header-container">
           <h1>Montagem de Sequências</h1>
+          <button onClick={handleOpenCreateModal} className="btn btn-primary btn-fixed-right">
+            + Adicionar Tipo de Sessão
+          </button>
         </div>
-        {isLoading && <p>Carregando dados...</p>}
 
-        <div className="montagem-layout">
-          {/* Coluna da Esquerda: Gestão de Tipos de Sessão */}
-          <div className="tipos-sessao-column">
-            <h3>Tipos de Sessão</h3>
-            <form
-              onSubmit={handleCreateTipoSessao}
-              className="new-tiposessao-form"
-            >
-              <input
-                type="text"
-                className="form-input"
-                placeholder="Novo tipo de sessão..."
-                value={newTipoSessaoName}
-                onChange={(e) => setNewTipoSessaoName(e.target.value)}
-              />
-              <button type="submit" className="btn btn-primary">
-                +
-              </button>
-            </form>
-            <div className="tipos-sessao-list">
-              {(tiposSessao || []).map((t) => (
-                <div
-                  key={t.id}
-                  className={`sessao-item ${
-                    selectedTipoSessao?.id === t.id ? "active" : ""
-                  }`}
-                  onClick={() => handleSelectTipoSessao(t)}
-                >
-                  <span>
-                    {t.nome} ({(t.playlists || []).length} playlists)
-                  </span>
-                  <button
-                    className="btn-delete-playlist"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteTipoSessao(t.id);
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
+        <input
+          type="text"
+          placeholder="Filtrar por nome do tipo de sessão..."
+          className="form-input filtro-input"
+          value={filtro}
+          onChange={(e) => setFiltro(e.target.value)}
+        />
+
+        {isLoading && <LoadingOverlay isLoading={isLoading} />}
+        {error && <p className="error-message">{error}</p>}
+
+        <div className="table-container">
+          <table className="styled-table">
+            <thead>
+              <tr>
+                <th>Nome do Tipo de Sessão</th>
+                <th>Nº de Playlists</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tiposSessaoFiltrados.map((tipoSessao, index) => (
+                <DraggableTipoSessaoRow
+                  key={tipoSessao.id}
+                  index={index}
+                  tipoSessao={tipoSessao}
+                  moveRow={moveRow}
+                  onManageSequence={handleOpenManageSequenceModal}
+                  onEdit={handleOpenEditModal}
+                  onDelete={handleOpenDeleteModal}
+                />
               ))}
-            </div>
-          </div>
-
-          {/* Coluna da Direita: Montagem da Sequência */}
-          <div className="sequencia-column">
-            {selectedTipoSessao ? (
-              <>
-                <h3>Sequência para &quot;{selectedTipoSessao.nome}&quot;</h3>
-                <div className="sequencia-editor">
-                  <div className="playlist-list-container">
-                    <h4>Playlists Disponíveis</h4>
-                    {playlistsDisponiveis.map((p) => (
-                      <div key={p.id} className="playlist-item">
-                        <span>{p.nome}</span>
-                        <button
-                          className="btn-action btn-approve"
-                          onClick={() => handleAddPlaylist(p)}
-                        >
-                          +
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="playlist-list-container">
-                    <h4>Sequência Atual</h4>
-                    {sequencia.map((p, index) => (
-                      <DraggablePlaylistItem
-                        key={p.id}
-                        index={index}
-                        playlist={p}
-                        movePlaylist={movePlaylist}
-                        onDelete={handleRemovePlaylist}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <button
-                  className="btn btn-primary"
-                  style={{ marginTop: "1.5rem", width: "100%" }}
-                  onClick={handleSaveSequencia}
-                >
-                  Salvar Sequência
-                </button>
-              </>
-            ) : (
-              <div className="placeholder-musicas">
-                <p>
-                  Selecione um Tipo de Sessão à esquerda para montar sua sequência
-                  musical.
-                </p>
-              </div>
-            )}
-          </div>
+            </tbody>
+          </table>
         </div>
+
+        {/* Placeholder para os modais */}
+                <TipoSessaoModal
+          isOpen={isTipoSessaoModalOpen}
+          onClose={() => setIsTipoSessaoModalOpen(false)}
+          onSave={handleSaveTipoSessao}
+          tipoSessao={currentTipoSessao}
+        />
+
+                <SequenciaEditorModal
+          isOpen={isSequenciaEditorModalOpen}
+          onClose={() => setIsSequenciaEditorModalOpen(false)}
+          tipoSessao={currentTipoSessao}
+          onSequenceSaved={() => {
+            refetch(); // Atualiza a lista de tipos de sessão para refletir a nova contagem de playlists
+          }}
+        />
+
+        <ConfirmationModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleDeleteConfirm}
+          title="Confirmar Exclusão"
+          message={`Tem certeza que deseja excluir o tipo de sessão "${currentTipoSessao?.nome}"? Isso removerá todas as sequências associadas.`}
+        />
       </div>
     </DndProvider>
   );

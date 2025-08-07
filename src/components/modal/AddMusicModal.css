@@ -1,0 +1,65 @@
+.add-music-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.add-music-form .form-group label {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--cor-texto-primario);
+}
+
+.add-music-form .form-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--cor-borda-input);
+  border-radius: 8px;
+  background-color: var(--cor-fundo-input);
+  color: var(--cor-texto-primario);
+  transition: border-color 0.2s ease;
+}
+
+.add-music-form .form-input::placeholder {
+  color: var(--cor-texto-secundario);
+}
+
+.add-music-form .form-input:focus {
+  border-color: var(--cor-active-icon);
+  outline: none;
+}
+
+.add-music-form .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.add-music-form .btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.add-music-form .btn-primary {
+  background-color: var(--cor-primaria);
+  color: var(--cor-texto-botao);
+  border: none;
+}
+
+.add-music-form .btn-primary:hover {
+  background-color: var(--cor-primaria-hover);
+}
+
+.add-music-form .btn-secondary {
+  background-color: var(--cor-fundo-input);
+  color: var(--cor-texto-primario);
+  border: 1px solid var(--cor-borda-input);
+}
+
+.add-music-form .btn-secondary:hover {
+  background-color: var(--cor-fundo-input-hover);
+}

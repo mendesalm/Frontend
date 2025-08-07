@@ -1,58 +1,48 @@
-import React, { useState, useEffect, useRef } from "react";
+// src/assets/pages/harmonia/GestaoPlaylistsPage.jsx (Refatorado)
+
+import React, { useState, useMemo } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { useDataFetching } from "../../../hooks/useDataFetching";
 import {
   getPlaylists,
   createPlaylist,
+  updatePlaylist,
   deletePlaylist,
-  createMusica,
-  deleteMusica,
-  updateMusicasPlaylist, // Importar a nova função
+  // As funções de música serão usadas nos modais
 } from "../../../services/harmoniaService";
 import { showSuccessToast, showErrorToast } from "../../../utils/notifications";
-import "./GestaoPlaylistsPage.css";
+import ConfirmationModal from "../../../components/modal/ConfirmationModal";
+import LoadingOverlay from "../../../components/layout/LoadingOverlay";
+import "./GestaoPlaylistsPage.css"; // Estilos serão atualizados/criados
 import "../../../assets/styles/FormStyles.css";
 
+import PlaylistModal from './modals/PlaylistModal';
+import MusicasModal from './modals/MusicasModal';
+import SelecionarMusicasModal from './modals/SelecionarMusicasModal';
+
+
 const ItemTypes = {
-  MUSICA: "musica",
+  PLAYLIST_ROW: "playlist_row",
 };
 
-const MusicNoteIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M9 18V5l12-2v13"></path>
-    <circle cx="6" cy="18" r="3"></circle>
-    <circle cx="18" cy="16" r="3"></circle>
-  </svg>
-);
-
-// Componente para um item de música arrastável
-const DraggableMusicaItem = ({ musica, index, moveMusica, onDelete }) => {
-  const ref = useRef(null);
+// Componente da Linha da Tabela Arrastável
+const DraggablePlaylistRow = ({ playlist, index, moveRow, onEdit, onAddMusicas, onViewMusicas, onDelete }) => {
+  const ref = React.useRef(null);
 
   const [, drop] = useDrop({
-    accept: ItemTypes.MUSICA,
+    accept: ItemTypes.PLAYLIST_ROW,
     hover(item) {
       if (item.index !== index) {
-        moveMusica(item.index, index);
+        moveRow(item.index, index);
         item.index = index;
       }
     },
   });
 
   const [{ isDragging }, drag] = useDrag({
-    type: ItemTypes.MUSICA,
-    item: { id: musica.id, index },
+    type: ItemTypes.PLAYLIST_ROW,
+    item: { id: playlist.id, index },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
@@ -60,273 +50,195 @@ const DraggableMusicaItem = ({ musica, index, moveMusica, onDelete }) => {
 
   drag(drop(ref));
 
+  const trClasses = [
+    isDragging ? "dragging" : "",
+    playlist.musicas?.length === 0 ? "playlist-vazia" : ""
+  ].join(" ").trim();
+
   return (
-    <div
-      ref={ref}
-      className="musica-item"
-      style={{ opacity: isDragging ? 0.5 : 1 }}
-    >
-      <span>{musica.titulo}</span>
-      <button className="btn-delete-musica" onClick={() => onDelete(musica.id)}>
-        Apagar
-      </button>
-    </div>
+    <tr ref={ref} className={trClasses}>
+      <td>{playlist.nome}</td>
+      <td>{playlist.musicas?.length || 0}</td>
+      <td className="actions-cell">
+        <button onClick={() => onAddMusicas(playlist)} className="btn-action btn-add-music">Adicionar Músicas</button>
+        <button onClick={() => onViewMusicas(playlist)} className="btn-action btn-view">Visualizar</button>
+        <button onClick={() => onEdit(playlist)} className="btn-action btn-edit">Editar</button>
+        <button onClick={() => onDelete(playlist)} className="btn-action btn-delete">Excluir</button>
+      </td>
+    </tr>
   );
 };
 
+
 const GestaoPlaylistsPage = () => {
+  console.log('GestaoPlaylistsPage re-rendered');
   const {
     data: playlists,
     isLoading,
     error,
     refetch,
   } = useDataFetching(getPlaylists);
-  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
-  const [newPlaylistName, setNewPlaylistName] = useState("");
-  const [newMusicTitle, setNewMusicTitle] = useState("");
-  const [newMusicAuthor, setNewMusicAuthor] = useState("");
-  const [newMusicFile, setNewMusicFile] = useState(null);
 
-  const handleCreatePlaylist = async (e) => {
-    e.preventDefault();
-    if (!newPlaylistName.trim())
-      return showErrorToast("O nome da playlist não pode estar vazio.");
-    try {
-      await createPlaylist({ nome: newPlaylistName });
-      setNewPlaylistName("");
-      refetch();
-      showSuccessToast("Playlist criada com sucesso!");
-    } catch (err) {
-      showErrorToast("Erro ao criar playlist.");
-    }
-  };
+  const [filtro, setFiltro] = useState("");
+  
+  // Estados para os modais
+  const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
+  const [isMusicasModalOpen, setIsMusicasModalOpen] = useState(false);
+  const [isSelectModalOpen, setIsSelectModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  
+  const [currentPlaylist, setCurrentPlaylist] = useState(null);
 
-  const handleDeletePlaylist = async (playlistId) => {
-    if (
-      window.confirm(
-        "Tem certeza que deseja apagar esta playlist e TODAS as suas músicas? A ação não pode ser desfeita."
-      )
-    ) {
-      try {
-        await deletePlaylist(playlistId);
-        if (selectedPlaylist?.id === playlistId) {
-          setSelectedPlaylist(null);
-        }
-        refetch();
-        showSuccessToast("Playlist apagada com sucesso.");
-      } catch (err) {
-        showErrorToast("Erro ao apagar playlist.");
-      }
-    }
-  };
-
-  const handleCreateMusica = async (e) => {
-    e.preventDefault();
-    if (!newMusicFile || !selectedPlaylist) {
-      showErrorToast(
-        "Selecione uma playlist e um arquivo de música para continuar."
-      );
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("audioFile", newMusicFile);
-    formData.append(
-      "titulo",
-      newMusicTitle.trim() || newMusicFile.name.replace(/\.[^/.]+$/, "")
+  const playlistsFiltradas = useMemo(() => {
+    if (!playlists) return [];
+    return playlists.filter((p) =>
+      p.nome.toLowerCase().includes(filtro.toLowerCase())
     );
-    formData.append("autor", newMusicAuthor.trim());
-    formData.append("playlistId", selectedPlaylist.id);
+  }, [playlists, filtro]);
 
-    try {
-      await createMusica(formData);
-      setNewMusicTitle("");
-      setNewMusicAuthor("");
-      setNewMusicFile(null);
-      document.getElementById("upload-musica-dnd").value = ""; // Limpa o input
-      refetch();
-      showSuccessToast("Música adicionada com sucesso!");
-    } catch (err) {
-      showErrorToast("Erro ao adicionar música.");
-    }
+  // Placeholder para a função de mover a linha
+  const moveRow = (fromIndex, toIndex) => {
+    console.log(`Mover playlist da posição ${fromIndex} para ${toIndex}`);
+    // Lógica de reordenação a ser implementada
   };
 
-  const handleDeleteMusica = async (musicaId) => {
-    if (window.confirm("Tem certeza que deseja apagar esta música?")) {
-      try {
-        await deleteMusica(musicaId);
-        refetch();
-        showSuccessToast("Música apagada.");
-      } catch (err) {
-        showErrorToast("Erro ao apagar música.");
+  // Funções para abrir os modais
+  const handleOpenCreateModal = () => {
+    setCurrentPlaylist(null);
+    setIsPlaylistModalOpen(true);
+  };
+
+  const handleOpenEditModal = (playlist) => {
+    setCurrentPlaylist(playlist);
+    setIsPlaylistModalOpen(true);
+  };
+  
+  const handleOpenAddMusicasModal = (playlist) => {
+    setCurrentPlaylist(playlist);
+    setIsSelectModalOpen(true);
+  };
+
+  const handleOpenViewMusicasModal = (playlist) => {
+    setCurrentPlaylist(playlist);
+    setIsMusicasModalOpen(true);
+  };
+
+  const handleOpenDeleteModal = (playlist) => {
+    setCurrentPlaylist(playlist);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleSavePlaylist = async (playlistData) => {
+    try {
+      if (playlistData.id) {
+        // Atualizar playlist existente
+        await updatePlaylist(playlistData.id, { nome: playlistData.nome });
+        showSuccessToast("Playlist atualizada com sucesso!");
+      } else {
+        // Criar nova playlist
+        await createPlaylist({ nome: playlistData.nome });
+        showSuccessToast("Playlist criada com sucesso!");
       }
-    }
-  };
-
-  const moveMusica = (fromIndex, toIndex) => {
-    if (!selectedPlaylist) return;
-
-    const updatedMusicas = [...selectedPlaylist.musicas];
-    const [movedMusica] = updatedMusicas.splice(fromIndex, 1);
-    updatedMusicas.splice(toIndex, 0, movedMusica);
-
-    // Atualiza o estado local imediatamente para feedback visual
-    setSelectedPlaylist((prev) => ({
-      ...prev,
-      musicas: updatedMusicas,
-    }));
-  };
-
-  const handleDropMusica = async () => {
-    if (!selectedPlaylist) return;
-
-    const musicaIds = selectedPlaylist.musicas.map((m) => m.id);
-
-    try {
-      await updateMusicasPlaylist(selectedPlaylist.id, musicaIds);
-      showSuccessToast("Ordem da playlist salva!");
-      refetch(); // Garante que os dados estão sincronizados com o backend
-    } catch (err) {
-      showErrorToast("Erro ao salvar a ordem da playlist.");
-      // Opcional: reverter a mudança visual se a API falhar
       refetch();
+      setIsPlaylistModalOpen(false);
+    } catch (err) {
+      showErrorToast(playlistData.id ? "Falha ao atualizar a playlist." : "Falha ao criar a playlist.");
     }
   };
 
-  useEffect(() => {
-    if (selectedPlaylist && playlists) {
-      const updatedPlaylist = playlists.find(
-        (p) => p.id === selectedPlaylist.id
-      );
-      setSelectedPlaylist(updatedPlaylist);
-    }
-  }, [playlists, selectedPlaylist]);
+  const handleDeleteConfirm = async () => {
+    if (!currentPlaylist) return;
+    try {
+      await deletePlaylist(currentPlaylist.id);
+      showSuccessToast("Playlist excluída com sucesso!");
+      refetch();
+      setIsDeleteModalOpen(false);
+    } catch (err) {
+      showErrorToast("Falha ao excluir a playlist.");
+    } 
+  }; // Confirmação de exclusão de playlist
+
+  
 
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="gestao-container">
-        <div className="table-header">
-          <h1>Gestão de Playlists e Músicas</h1>
+        <div className="header-container">
+          <h1>Gestão de Playlists</h1>
+          <button onClick={handleOpenCreateModal} className="btn btn-primary btn-fixed-right">
+            + Adicionar Playlist
+          </button>
         </div>
+
+        <input
+          type="text"
+          placeholder="Filtrar por nome da playlist..."
+          className="form-input filtro-input"
+          value={filtro}
+          onChange={(e) => setFiltro(e.target.value)}
+        />
+
+        {isLoading && <LoadingOverlay isLoading={isLoading} />}
         {error && <p className="error-message">{error}</p>}
 
-        <div className="gestao-layout">
-          <div className="playlists-column">
-            <h3>Playlists</h3>
-            <form
-              onSubmit={handleCreatePlaylist}
-              className="new-playlist-form"
-            >
-              <input
-                type="text"
-                className="form-input"
-                placeholder="Nome da nova playlist..."
-                value={newPlaylistName}
-                onChange={(e) => setNewPlaylistName(e.target.value)}
-              />
-              <button type="submit" className="btn btn-primary">
-                +
-              </button>
-            </form>
-            <div className="playlists-grid">
-              {isLoading ? (
-                <p>Carregando...</p>
-              ) : (
-                (playlists || []).map((p) => (
-                  <div
-                    key={p.id}
-                    className={`playlist-card ${
-                      selectedPlaylist?.id === p.id ? "active" : ""
-                    }`}
-                    onClick={() => setSelectedPlaylist(p)}
-                  >
-                    <div className="playlist-card-header">
-                      <span className="playlist-name">{p.nome}</span>
-                      <button
-                        className="btn-delete-playlist"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeletePlaylist(p.id);
-                        }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                    <div className="playlist-card-body">
-                      <MusicNoteIcon />
-                      <span className="track-count">
-                        {p.musicas?.length || 0} músicas
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className="musicas-column">
-            {selectedPlaylist ? (
-              <>
-                <h3>Músicas em &quot;{selectedPlaylist.nome}&quot;</h3>
-                <div className="musicas-list" onMouseUp={handleDropMusica}>
-                  {selectedPlaylist.musicas &&
-                  selectedPlaylist.musicas.length > 0 ? (
-                    selectedPlaylist.musicas.map((m, index) => (
-                      <DraggableMusicaItem
-                        key={m.id}
-                        index={index}
-                        musica={m}
-                        moveMusica={moveMusica}
-                        onDelete={handleDeleteMusica}
-                      />
-                    ))
-                  ) : (
-                    <p>
-                      Esta playlist está vazia. Arraste músicas para cá ou use o
-                      formulário abaixo.
-                    </p>
-                  )}
-                </div>
-                <form
-                  className="upload-form-dnd"
-                  onSubmit={handleCreateMusica}
-                >
-                  <input
-                    type="text"
-                    placeholder="Título da música (opcional)"
-                    value={newMusicTitle}
-                    onChange={(e) => setNewMusicTitle(e.target.value)}
-                    className="form-input"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Autor (opcional)"
-                    value={newMusicAuthor}
-                    onChange={(e) => setNewMusicAuthor(e.target.value)}
-                    className="form-input"
-                  />
-                  <input
-                    type="file"
-                    id="upload-musica-dnd"
-                    onChange={(e) => setNewMusicFile(e.target.files[0])}
-                    accept="audio/*"
-                    className="form-input"
-                  />
-                  <button type="submit" className="btn btn-primary">
-                    Adicionar Música
-                  </button>
-                </form>
-              </>
-            ) : (
-              <div className="placeholder-musicas">
-                <p>
-                  Selecione uma playlist à esquerda para ver e adicionar suas
-                  músicas.
-                </p>
-              </div>
-            )}
-          </div>
+        <div className="table-container">
+          <table className="styled-table">
+            <thead>
+              <tr>
+                <th>Nome da Playlist</th>
+                <th>Nº de Músicas</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {playlistsFiltradas.map((playlist, index) => (
+                <DraggablePlaylistRow
+                  key={playlist.id}
+                  index={index}
+                  playlist={playlist}
+                  moveRow={moveRow}
+                  onAddMusicas={handleOpenAddMusicasModal}
+                  onViewMusicas={handleOpenViewMusicasModal}
+                  onEdit={handleOpenEditModal}
+                  onDelete={handleOpenDeleteModal}
+                />
+              ))}
+            </tbody>
+          </table>
         </div>
+
+        <PlaylistModal
+          isOpen={isPlaylistModalOpen}
+          onClose={() => setIsPlaylistModalOpen(false)}
+          onSave={handleSavePlaylist}
+          playlist={currentPlaylist}
+        />
+
+                <MusicasModal
+          isOpen={isMusicasModalOpen}
+          onClose={() => setIsMusicasModalOpen(false)}
+          playlist={currentPlaylist}
+          onMusicRemoved={() => {
+            refetch(); // Atualiza a lista de playlists para refletir a contagem de músicas
+          }}
+        />
+
+                <SelecionarMusicasModal
+          isOpen={isSelectModalOpen}
+          onClose={() => setIsSelectModalOpen(false)}
+          playlist={currentPlaylist}
+          onMusicasAdd={() => {
+            refetch(); // Atualiza a lista de playlists para refletir a nova contagem de músicas
+          }}
+        />
+
+        <ConfirmationModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleDeleteConfirm}
+          title="Confirmar Exclusão"
+          message={`Tem certeza que deseja excluir a playlist "${currentPlaylist?.nome}"? As músicas não serão apagadas da sua biblioteca.`}
+        />
       </div>
     </DndProvider>
   );

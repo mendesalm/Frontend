@@ -1,6 +1,6 @@
-// src/assets/pages/harmonia/GestaoMusicasPage.jsx (NOVO)
+// src/assets/pages/harmonia/GestaoMusicasPage.jsx (Refatorado para Biblioteca de Músicas)
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import { useDataFetching } from "../../../hooks/useDataFetching";
 import {
   getMusicas,
@@ -9,8 +9,9 @@ import {
 } from "../../../services/harmoniaService";
 import { showSuccessToast, showErrorToast } from "../../../utils/notifications";
 import Modal from "../../../components/modal/Modal";
-import HarmoniaForm from "./HarmoniaForm"; // Reutilizando o formulário de upload
-import "./GestaoMusicasPage.css"; // Novo CSS
+import ConfirmationModal from "../../../components/modal/ConfirmationModal";
+import HarmoniaForm from "./HarmoniaForm";
+import "./GestaoMusicasPage.css";
 import apiClient from "../../../services/apiClient";
 
 const GestaoMusicasPage = () => {
@@ -20,38 +21,63 @@ const GestaoMusicasPage = () => {
     error,
     refetch,
   } = useDataFetching(getMusicas);
+
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  
   const [currentMusica, setCurrentMusica] = useState(null);
   const [newTitulo, setNewTitulo] = useState("");
-
+  const [filtro, setFiltro] = useState("");
+  
+  const [musicaTocando, setMusicaTocando] = useState(null);
   const audioRef = useRef(new Audio());
 
+  // Lógica do Player de Áudio
   const handlePlayPreview = (musica) => {
-    const baseURL = apiClient.defaults.baseURL.startsWith("http")
-      ? apiClient.defaults.baseURL
-      : window.location.origin;
-    const finalPath = `${baseURL}/${musica.path}`.replace(/([^:]\/)\/+/g, "$1");
+    if (musicaTocando?.id === musica.id) {
+      handleStopPreview();
+      return;
+    }
+
+    const audioPath = `/uploads/${musica.path}`;
+    const audioSrc =
+      import.meta.env.MODE === "production"
+        ? `${import.meta.env.VITE_BACKEND_URL}${audioPath}`
+        : audioPath;
 
     const audio = audioRef.current;
-    audio.src = finalPath;
-    audio.play().catch(() => showErrorToast("Erro ao tocar áudio."));
+    audio.src = audioSrc;
+    audio.play().catch((e) => {
+      console.error("Erro ao tocar áudio:", e);
+      showErrorToast("Formato de áudio não suportado.");
+    });
+    setMusicaTocando(musica);
   };
 
-  const handleDelete = async (musicaId) => {
-    if (
-      window.confirm(
-        "Tem certeza que deseja excluir esta música? A ação não pode ser desfeita."
-      )
-    ) {
-      try {
-        await deleteMusica(musicaId);
-        showSuccessToast("Música excluída com sucesso!");
-        refetch();
-      } catch (err) {
-        showErrorToast("Falha ao excluir a música.");
-        console.error(err);
-      }
+  const handleStopPreview = () => {
+    audioRef.current.pause();
+    audioRef.current.currentTime = 0;
+    setMusicaTocando(null);
+  };
+
+  // Lógica de CRUD
+  const handleDeleteRequest = (musica) => {
+    setCurrentMusica(musica);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!currentMusica) return;
+    try {
+      await deleteMusica(currentMusica.id);
+      showSuccessToast("Música excluída com sucesso!");
+      refetch();
+      setIsDeleteModalOpen(false);
+      setCurrentMusica(null);
+    } catch (err) {
+      showErrorToast("Falha ao excluir a música.");
+      console.error(err);
     }
   };
 
@@ -78,19 +104,36 @@ const GestaoMusicasPage = () => {
     }
   };
 
-  if (isLoading) return <p>Carregando músicas...</p>;
+  const musicasFiltradas = useMemo(() => {
+    if (!musicas) return [];
+    return musicas.filter((musica) =>
+      musica.titulo.toLowerCase().includes(filtro.toLowerCase())
+    );
+  }, [musicas, filtro]);
+
+  if (isLoading) return <p>Carregando biblioteca de músicas...</p>;
   if (error) return <p className="error-message">{error}</p>;
 
   return (
     <div className="gestao-musicas-container">
       <div className="header-container">
-        <h1>Gestão de Músicas</h1>
+        <h1>Biblioteca de Músicas</h1>
         <button
           onClick={() => setIsUploadModalOpen(true)}
           className="btn btn-primary"
         >
           Upload Nova Música
         </button>
+      </div>
+
+      <div className="filtro-container">
+        <input
+          type="text"
+          placeholder="Filtrar por título..."
+          className="form-input"
+          value={filtro}
+          onChange={(e) => setFiltro(e.target.value)}
+        />
       </div>
 
       <table className="styled-table">
@@ -101,15 +144,15 @@ const GestaoMusicasPage = () => {
           </tr>
         </thead>
         <tbody>
-          {(musicas || []).map((musica) => (
+          {musicasFiltradas.map((musica) => (
             <tr key={musica.id}>
               <td>{musica.titulo}</td>
               <td className="actions-cell">
                 <button
                   onClick={() => handlePlayPreview(musica)}
-                  className="btn-action btn-preview"
+                  className={`btn-action ${musicaTocando?.id === musica.id ? 'btn-stop' : 'btn-preview'}`}
                 >
-                  Ouvir
+                  {musicaTocando?.id === musica.id ? "Parar" : "Ouvir"}
                 </button>
                 <button
                   onClick={() => openEditModal(musica)}
@@ -118,7 +161,7 @@ const GestaoMusicasPage = () => {
                   Editar
                 </button>
                 <button
-                  onClick={() => handleDelete(musica.id)}
+                  onClick={() => handleDeleteRequest(musica)}
                   className="btn-action btn-delete"
                 >
                   Excluir
@@ -133,14 +176,14 @@ const GestaoMusicasPage = () => {
       <Modal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
-        title="Upload de Nova Música"
+        title="Upload de Nova Música para a Biblioteca"
       >
         <HarmoniaForm
           onSuccess={() => {
             setIsUploadModalOpen(false);
             refetch();
           }}
-          onCancel={() => setIsUploadModalOpen(false)} // Adicionado
+          onCancel={() => setIsUploadModalOpen(false)}
         />
       </Modal>
 
@@ -164,6 +207,15 @@ const GestaoMusicasPage = () => {
           Salvar Alterações
         </button>
       </Modal>
+
+      {/* Modal de Confirmação de Exclusão */}
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Confirmar Exclusão Permanente"
+        message="Atenção: Esta ação apagará permanentemente o arquivo de música do sistema. Ele será removido de TODAS as playlists em que aparece. Deseja continuar?"
+      />
     </div>
   );
 };

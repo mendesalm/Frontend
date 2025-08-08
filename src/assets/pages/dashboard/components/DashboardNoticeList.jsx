@@ -12,10 +12,7 @@ const DashboardNoticeList = ({ avisos }) => {
     );
   }
 
-  const getFileUrl = (path) => {
-    if (!path) return "#";
-    return `${window.location.origin}${path.startsWith('/') ? '' : '/'}${path}`;
-  };
+  
 
   return (
     <div className="dashboard-widget">

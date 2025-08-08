@@ -10,13 +10,19 @@ export const getFileUrl = (path) => {
     return path;
   }
 
+  // Remove o prefixo /api/ se ele estiver presente (do backend, por exemplo).
+  let processedPath = path;
+  if (processedPath.startsWith('/api/')) {
+    processedPath = processedPath.substring(4); // Remove '/api'
+  }
+
   // Se o caminho já começar com '/uploads/', retorne-o diretamente.
-  if (path.startsWith('/uploads/')) {
-    return path;
+  if (processedPath.startsWith('/uploads/')) {
+    return processedPath;
   }
 
   // Para todos os outros caminhos, que são considerados endpoints de API,
   // adicione o prefixo da API_BASE_URL.
   // Certifique-se de que não haja barras duplas.
-  return `${API_BASE_URL}${path.startsWith('/') ? path : '/' + path}`;
+  return `${API_BASE_URL}${processedPath.startsWith('/') ? processedPath : '/' + processedPath}`;
 };

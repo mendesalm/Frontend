@@ -1,21 +1,26 @@
-  name: Deploy Frontend to VPS
-  on:
-    push:
-      branches: [ main ] # Altere para a branch que você usa, se for diferente
-  jobs:
-    deploy-frontend:
-      runs-on: ubuntu-latest
-      steps:
-        - name: Deploy Frontend to VPS via SSH
-          uses: appleboy/ssh-action@master
-          with:
-            host: 69.62.89.211 # IP da sua VPS
-            username: root # Usuário da VPS
-            key: ${{ secrets.SSH_PRIVATE_KEY }} # Nome do segredo com a chave privada
-            script: |
-              cd /root/sysjpj/Frontend
-              git pull origin main
-              npm install
-              npm run build
-              cp -r dist/* /var/www/html/
-              systemctl reload nginx
+name: Deploy Frontend to VPS
+on:
+  push:
+    branches: [ main ] # Altere para a branch que você usa, se for diferente
+jobs:
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy Frontend to VPS via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: 69.62.89.211 # IP da sua VPS
+          username: root # Usuário da VPS (certifique-se de que ele tem permissão para sudo)
+          key: ${{ secrets.SSH_PRIVATE_KEY }} # Nome do segredo com a chave privada
+          script: |
+            cd /root/sysjpj/Frontend
+            git pull origin main
+            npm install
+            npm run build
+            sudo rm -rf /var/www/html/*
+            sudo cp -r dist/* /var/www/html/
+            sudo chown -R www-data:www-data /var/www/html/
+            sudo chmod -R 755 /var/www/html/
+            sudo systemctl reload nginx
+
+

@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { patrimonioValidationSchema } from "../../../validators/PatrimonioValidator";
+import { patrimonioValidationSchema } from "../../../validators/patrimonioValidator";
 import "../../../assets/styles/FormStyles.css";
 
 const PatrimonioForm = ({ itemToEdit, onSave, onCancel }) => {

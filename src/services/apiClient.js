@@ -2,8 +2,8 @@ import axios from "axios";
 
 const apiBaseUrl =
   import.meta.env.MODE === "development"
-    ? "/api"
-    : `${import.meta.env.VITE_API_BASE_URL || ""}/api`;
+    ? ""
+    : `${import.meta.env.VITE_API_BASE_URL || ""}`;
 
 
 // Cria a instância base do cliente Axios
@@ -34,7 +34,7 @@ const refreshAuthToken = async () => {
 
   try {
     // Usa uma instância limpa do axios para a renovação para evitar um loop de interceptores
-    const response = await axios.post(`${apiBaseUrl}/auth/refresh-token`, {
+    const response = await apiClient.post(`/auth/refresh-token`, {
       token: refreshToken,
     });
     const { token: newAuthToken } = response.data;

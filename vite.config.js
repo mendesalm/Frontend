@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // Carrega variáveis de ambiente com base no modo (development, production, etc.)
-  const env = loadEnv(mode, process.cwd(), "");
+  const env = loadEnv(mode, '', "");
 
   return {
     plugins: [react({ jsxRuntime: "automatic" })],
@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => {
         "/api": {
           target: env.VITE_BACKEND_URL || "http://localhost:3001",
           changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api/, ""),
         },
         // Proxy para a pasta de uploads (áudios, imagens, etc.)
         "/uploads": {

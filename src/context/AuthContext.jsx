@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
       console.log(
         "[AuthContext] A buscar o perfil completo do utilizador via /lodgemembers/me..."
       );
-      const response = await apiClient.get("/lodgemembers/me");
+      const response = await apiClient.get("lodgemembers/me");
       console.log("[AuthContext] RESPOSTA DA API (/me):", response.data); // LOG CRÍTICO 1
       setUser(response.data);
       return response.data;
@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     console.log("[AuthContext] Tentativa de login para:", email);
-    const response = await apiClient.post("/auth/login", {
+    const response = await apiClient.post("auth/login", {
       Email: email,
       password: password,
     });

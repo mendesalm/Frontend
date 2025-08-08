@@ -1,11 +1,14 @@
 import axios from "axios";
 
+const apiBaseUrl =
+  import.meta.env.MODE === "development"
+    ? "/api"
+    : `${import.meta.env.VITE_API_BASE_URL || ""}/api`;
+
+
 // Cria a instância base do cliente Axios
 const apiClient = axios.create({
-  baseURL:
-    import.meta.env.MODE === "development"
-      ? "/api"
-      : import.meta.env.VITE_API_BASE_URL || "/api",
+  baseURL: apiBaseUrl,
 });
 
 // Interceptor de Requisição: Adiciona o token a cada chamada
@@ -31,7 +34,7 @@ const refreshAuthToken = async () => {
 
   try {
     // Usa uma instância limpa do axios para a renovação para evitar um loop de interceptores
-    const response = await axios.post("/api/auth/refresh-token", {
+    const response = await axios.post(`${apiBaseUrl}/auth/refresh-token`, {
       token: refreshToken,
     });
     const { token: newAuthToken } = response.data;

@@ -5,22 +5,19 @@ export const getFileUrl = (path) => {
     return "#";
   }
 
-  // Se o caminho já for uma URL completa, retorne-o como está.
+  // Se o caminho já for uma URL completa (http/https), retorne-o como está.
   if (path.startsWith('http://') || path.startsWith('https://')) {
     return path;
   }
 
-  // Normaliza o caminho para remover a barra inicial, se houver.
-  const normalizedPath = path.startsWith('/') ? path.substring(1) : path;
-
-  // Verifica se o caminho normalizado começa com 'uploads'.
-  if (normalizedPath.startsWith('uploads')) {
-    // Para desenvolvimento, o proxy do Vite cuidará do caminho relativo.
-    // Para produção, o servidor web (nginx, etc.) deve ser configurado para servir a pasta de uploads.
-    // Retornar o caminho com a barra inicial garante que ele seja relativo à raiz do domínio.
-    return `/${normalizedPath}`;
+  // Se o caminho começar com '/uploads' ou 'uploads', retorne-o com uma barra inicial.
+  // O proxy do Vite (em desenvolvimento) ou a configuração do servidor web (em produção)
+  // deve lidar com o roteamento correto para a pasta de uploads.
+  if (path.startsWith('/uploads') || path.startsWith('uploads')) {
+    return path.startsWith('/') ? path : `/${path}`;
   }
 
-  // Para todos os outros caminhos de API, construa a URL completa com o prefixo da API.
-  return `${API_BASE_URL}/${normalizedPath}`;
+  // Para todos os outros caminhos, que são considerados caminhos de API,
+  // adicione o prefixo da API_BASE_URL.
+  return `${API_BASE_URL}${path}`;
 };

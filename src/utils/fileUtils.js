@@ -10,20 +10,22 @@ export const getFileUrl = (path) => {
     return path;
   }
 
-  // Remove o prefixo /api/ se ele estiver presente, pois o backend pode retornar caminhos com ele.
-  let cleanedPath = path;
-  if (cleanedPath.startsWith('/api/')) {
-    cleanedPath = cleanedPath.substring(4); // Remove '/api'
+  // Remove o prefixo /api/ se ele estiver presente (do backend, por exemplo).
+  let processedPath = path;
+  if (processedPath.startsWith('/api/')) {
+    processedPath = processedPath.substring(4); // Remove '/api'
   }
 
-  // Se o caminho limpo começar com 'uploads', retorne-o com uma barra inicial.
-  // O proxy do Vite (em desenvolvimento) ou a configuração do servidor web (em produção)
-  // deve lidar com o roteamento correto para a pasta de uploads.
-  if (cleanedPath.startsWith('uploads')) {
-    return `/${cleanedPath}`;
+  // Normaliza o caminho: remove a barra inicial para uma verificação consistente com 'startsWith'.
+  const normalizedPath = processedPath.startsWith('/') ? processedPath.substring(1) : processedPath;
+
+  // Se o caminho normalizado começar com 'uploads', retorne-o com uma barra inicial.
+  // Isso garante que arquivos de upload sejam acessados diretamente da raiz do domínio.
+  if (normalizedPath.startsWith('uploads')) {
+    return `/${normalizedPath}`;
   }
 
-  // Para todos os outros caminhos, que são considerados caminhos de API,
+  // Para todos os outros caminhos, que são considerados endpoints de API,
   // adicione o prefixo da API_BASE_URL.
-  return `${API_BASE_URL}/${cleanedPath}`;
+  return `${API_BASE_URL}/${normalizedPath}`;
 };

@@ -1,26 +1,60 @@
 name: Deploy Frontend to VPS
+
 on:
   push:
-    branches: [ main ] # Altere para a branch que você usa, se for diferente
+    branches:
+      - main # Define the branch that triggers the deployment
+
 jobs:
-  deploy-frontend:
-    runs-on: ubuntu-latest
+  deploy:
+    runs-on: ubuntu-latest # The type of runner that the job will run on
+
     steps:
-      - name: Deploy Frontend to VPS via SSH
-        uses: appleboy/ssh-action@master
+      - name: Checkout code
+        uses: actions/checkout@v4 # Action to check out your repository code
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4 # Action to set up Node.js environment
         with:
-          host: 69.62.89.211 # IP da sua VPS
-          username: root # Usuário da VPS (certifique-se de que ele tem permissão para sudo)
-          key: ${{ secrets.SSH_PRIVATE_KEY }} # Nome do segredo com a chave privada
+          node-version: '20' # Specify your Node.js version
+
+      - name: Install dependencies
+        run: npm ci # Installs dependencies cleanly, ideal for CI environments
+
+      - name: Build frontend
+        run: npm run build # Command to build your Vite/React application
+        env:
+          # Pass environment variables required for the production build
+          # These should be configured as GitHub Secrets
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL_PROD }}
+          VITE_UPLOADS_BASE_URL: ${{ secrets.VITE_UPLOADS_BASE_URL_PROD }}
+          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL_PROD }}
+          VITE_APP_ENV: production
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.0 # Using a specific version for stability
+        with:
+          host: ${{ secrets.VPS_HOST }} # Your VPS IP address or hostname (use secret)
+          username: ${{ secrets.VPS_USERNAME }} # Your SSH username on the VPS (use secret)
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }} # Your SSH private key (use secret)
+          port: ${{ secrets.VPS_PORT }} # SSH port, usually 22 (use secret, or default to 22)
+          source: 'dist/' # The directory containing your built frontend files
+          target: '/var/www/html/' # The destination directory on your VPS
+
+          # Commands to execute on your VPS after files are copied
           script: |
-            cd /root/sysjpj/Frontend
-            git pull origin main
-            npm install
-            npm run build
-            sudo rm -rf /var/www/html/*
-            sudo cp -r dist/* /var/www/html/
+            echo "Cleaning existing files in /var/www/html/..."
+            sudo rm -rf /var/www/html/* # Clear the web root before copying new files
+
+            echo "Copying new files to /var/www/html/..."
+            # The 'source' and 'target' parameters of appleboy/ssh-action handle the copy.
+            # No need for 'cp -r dist/*' here, as it's done by the action itself.
+
+            echo "Setting file permissions and ownership..."
             sudo chown -R www-data:www-data /var/www/html/
             sudo chmod -R 755 /var/www/html/
+
+            echo "Reloading Nginx..."
             sudo systemctl reload nginx
 
-
+            echo "Frontend deployed successfully!"

@@ -9,7 +9,7 @@ import {
   showSuccessToast,
   showErrorToast,
 } from "../../../../utils/notifications";
-import apiClient from "../../../../services/apiClient";
+
 
 // Importações dos serviços e validadores
 import * as legislacaoService from "../../../../services/legislacaoService";
@@ -87,12 +87,13 @@ const GenericFileManagementPage = ({
   };
 
   const getFileUrl = (path) => {
-    // IMPORTANTE: O backend deve retornar um caminho relativo (ex: 'uploads/ficheiro.pdf')
-    // e não um caminho absoluto do sistema de ficheiros (ex: 'C:\\Users\\...').
-    const baseURL = apiClient.defaults.baseURL.startsWith("http")
-      ? apiClient.defaults.baseURL
-      : window.location.origin;
-    return `${baseURL}/${path}`.replace("/api/", "/");
+    if (!path) {
+      return "";
+    }
+    // Garante que o caminho retornado seja sempre um caminho de URL relativo à raiz.
+    // Se o caminho já começar com uma barra, usa-o como está.
+    // Caso contrário, adiciona uma barra no início.
+    return path.startsWith('/') ? path : `/${path}`;
   };
 
   const openCreateModal = () => {

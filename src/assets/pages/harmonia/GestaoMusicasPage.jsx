@@ -1,5 +1,4 @@
-// src/assets/pages/harmonia/GestaoMusicasPage.jsx (Refatorado para Biblioteca de Músicas)
-
+// src/assets/pages/harmonia/GestaoMusicasPage.jsx
 import React, { useState, useRef, useMemo } from "react";
 import { useDataFetching } from "../../../hooks/useDataFetching";
 import {
@@ -12,7 +11,7 @@ import Modal from "../../../components/modal/Modal";
 import ConfirmationModal from "../../../components/modal/ConfirmationModal";
 import HarmoniaForm from "./HarmoniaForm";
 import "./GestaoMusicasPage.css";
-import apiClient from "../../../services/apiClient";
+import "../../../services/apiClient"; // Certifique-se de que este arquivo configura o Axios para /api/
 
 const GestaoMusicasPage = () => {
   const {
@@ -21,15 +20,12 @@ const GestaoMusicasPage = () => {
     error,
     refetch,
   } = useDataFetching(getMusicas);
-
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  
   const [currentMusica, setCurrentMusica] = useState(null);
   const [newTitulo, setNewTitulo] = useState("");
   const [filtro, setFiltro] = useState("");
-  
   const [musicaTocando, setMusicaTocando] = useState(null);
   const audioRef = useRef(new Audio());
 
@@ -40,11 +36,11 @@ const GestaoMusicasPage = () => {
       return;
     }
 
-    const audioPath = `/uploads/${musica.path}`;
-    const audioSrc =
-      import.meta.env.MODE === "production"
-        ? `${import.meta.env.VITE_BACKEND_URL}${audioPath}`
-        : audioPath;
+    // AQUI ESTÁ A MUDANÇA:
+    // Assumimos que 'musica.path' já vem do backend como "/uploads/caminho/do/arquivo.mp3"
+    // Não precisamos adicionar "/uploads/" novamente, nem o VITE_BACKEND_URL.
+    // O navegador resolverá "/uploads/..." em relação à origem do site.
+    const audioSrc = musica.path; // Use o caminho diretamente do backend
 
     const audio = audioRef.current;
     audio.src = audioSrc;
@@ -125,7 +121,6 @@ const GestaoMusicasPage = () => {
           Upload Nova Música
         </button>
       </div>
-
       <div className="filtro-container">
         <input
           type="text"
@@ -135,7 +130,6 @@ const GestaoMusicasPage = () => {
           onChange={(e) => setFiltro(e.target.value)}
         />
       </div>
-
       <table className="styled-table">
         <thead>
           <tr>
@@ -150,7 +144,9 @@ const GestaoMusicasPage = () => {
               <td className="actions-cell">
                 <button
                   onClick={() => handlePlayPreview(musica)}
-                  className={`btn-action ${musicaTocando?.id === musica.id ? 'btn-stop' : 'btn-preview'}`}
+                  className={`btn-action ${
+                    musicaTocando?.id === musica.id ? "btn-stop" : "btn-preview"
+                  }`}
                 >
                   {musicaTocando?.id === musica.id ? "Parar" : "Ouvir"}
                 </button>
@@ -171,7 +167,6 @@ const GestaoMusicasPage = () => {
           ))}
         </tbody>
       </table>
-
       {/* Modal de Upload */}
       <Modal
         isOpen={isUploadModalOpen}
@@ -186,7 +181,6 @@ const GestaoMusicasPage = () => {
           onCancel={() => setIsUploadModalOpen(false)}
         />
       </Modal>
-
       {/* Modal de Edição */}
       <Modal
         isOpen={isEditModalOpen}
@@ -207,7 +201,6 @@ const GestaoMusicasPage = () => {
           Salvar Alterações
         </button>
       </Modal>
-
       {/* Modal de Confirmação de Exclusão */}
       <ConfirmationModal
         isOpen={isDeleteModalOpen}

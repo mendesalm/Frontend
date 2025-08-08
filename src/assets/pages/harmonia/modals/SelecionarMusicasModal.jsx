@@ -52,7 +52,7 @@ const SelecionarMusicasModal = ({ isOpen, onClose, playlist, onMusicasAdd }) => 
         return;
     }
     const audioPath = `/uploads/${musica.path}`;
-    const audioSrc = import.meta.env.MODE === "production" ? `${import.meta.env.VITE_BACKEND_URL}${audioPath}` : audioPath;
+    const audioSrc = audioPath;
     audioRef.current.src = audioSrc;
     audioRef.current.play().catch(() => showErrorToast("Erro ao tocar áudio."));
     setMusicaTocando(musica);

@@ -5,6 +5,7 @@ const apiBaseUrl =
     ? ""
     : `${import.meta.env.VITE_API_BASE_URL || ""}`;
 
+console.log("API Base URL:", apiBaseUrl);
 
 // Cria a instância base do cliente Axios
 const apiClient = axios.create({

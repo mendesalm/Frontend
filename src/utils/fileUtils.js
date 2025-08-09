@@ -1,35 +1,33 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
 
 export const getFileUrl = (path) => {
-  if (!path) {
-    return "#";
-  }
+  if (!path) return "#";
 
-  let processedPath = path;
+  let processedPath = path.trim();
 
-  // Se o caminho começar com a VITE_BACKEND_URL, remova-a.
-  const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
+  // Remove a URL completa do backend se estiver incluída
   if (VITE_BACKEND_URL && processedPath.startsWith(VITE_BACKEND_URL)) {
-    processedPath = processedPath.substring(VITE_BACKEND_URL.length);
+    processedPath = processedPath.slice(VITE_BACKEND_URL.length);
   }
 
-  // Se o caminho já for uma URL completa (http/https) após a remoção do VITE_BACKEND_URL, retorne-o como está.
-  if (processedPath.startsWith('http://') || processedPath.startsWith('https://')) {
+  // Se já for uma URL absoluta, retorna como está
+  if (/^https?:\/\//i.test(processedPath)) {
     return processedPath;
   }
 
-  // Remove o prefixo /api/ se ele estiver presente (do backend, por exemplo).
-  if (processedPath.startsWith('/api/')) {
-    processedPath = processedPath.substring(4); // Remove '/api'
+  // Remove prefixo /api/ caso exista
+  if (processedPath.startsWith("/api/")) {
+    processedPath = processedPath.slice(4);
   }
 
-  // Se o caminho já começar com '/uploads/', retorne-o diretamente.
-  if (processedPath.startsWith('/uploads/')) {
-    return processedPath;
+  // Se for arquivo em /uploads/, serve diretamente do backend (sem /api)
+  if (processedPath.startsWith("/uploads/")) {
+    return `${VITE_BACKEND_URL}${processedPath}`;
   }
 
-  // Para todos os outros caminhos, que são considerados endpoints de API,
-  // adicione o prefixo da API_BASE_URL.
-  // Certifique-se de que não haja barras duplas.
-  return `${API_BASE_URL}${processedPath.startsWith('/') ? processedPath : '/' + processedPath}`;
+  // Para qualquer outro caso, considera endpoint de API
+  return `${API_BASE_URL}${
+    processedPath.startsWith("/") ? processedPath : `/${processedPath}`
+  }`;
 };

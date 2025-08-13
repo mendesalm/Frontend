@@ -1,9 +1,15 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
-const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "";
+const normalizeBaseUrl = (url) => {
+  if (!url) return "";
+  return url.endsWith("/") ? url.slice(0, -1) : url;
+};
+
+const VITE_BACKEND_URL = normalizeBaseUrl(
+  import.meta.env.VITE_BACKEND_URL || ""
+);
+const API_BASE_URL = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL || "");
 
 export const getFileUrl = (path) => {
   if (!path) return "#";
-
   let processedPath = path.trim();
 
   // Remove a URL completa do backend se estiver incluída
@@ -21,12 +27,12 @@ export const getFileUrl = (path) => {
     processedPath = processedPath.slice(4);
   }
 
-  // Se for arquivo em /uploads/, serve diretamente do backend (sem /api)
+  // Se for arquivo em /uploads/, monta URL plena do backend:
   if (processedPath.startsWith("/uploads/")) {
-    return processedPath;
+    return `${VITE_BACKEND_URL}${processedPath}`;
   }
 
-  // Para qualquer outro caso, considera endpoint de API
+  // Para qualquer outro caso, considera endpoint da API
   return `${API_BASE_URL}${
     processedPath.startsWith("/") ? processedPath : `/${processedPath}`
   }`;

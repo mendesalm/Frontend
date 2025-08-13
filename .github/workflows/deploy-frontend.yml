@@ -1,25 +1,51 @@
 name: Deploy Frontend to VPS
 on:
   push:
-    branches: [main]
+    branches: [ main ]  # altera se usar outra branch
 
 jobs:
-  deploy-frontend:
+  build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Deploy Frontend to VPS via SSH
+      # 1. Clona repositório
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Configura Node.js v22.18.0
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.18.0
+          cache: 'npm'
+
+      # 3. Instala dependências e builda
+      - name: Install dependencies & build
+        run: |
+          npm ci
+          npm run build
+
+      # 4. Envia build para VPS via SCP
+      - name: Upload build to VPS
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "dist/*"
+          target: "/var/www/html_tmp"
+
+      # 5. Ajusta pastas e ativa nova versão
+      - name: Activate new build
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /root/sysjpj/Frontend
-            git pull origin main
-            npm install --production
-            npm run build
-            sudo rm -rf /var/www/html/*
-            sudo cp -r dist/* /var/www/html/
-            sudo chown -R www-data:www-data /var/www/html/
-            sudo chmod -R 755 /var/www/html/
+            sudo rm -rf /var/www/html_old
+            sudo mv /var/www/html /var/www/html_old || true
+            sudo mv /var/www/html_tmp /var/www/html
+            sudo chown -R www-data:www-data /var/www/html
+            sudo chmod -R 755 /var/www/html
             sudo systemctl reload nginx

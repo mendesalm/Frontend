@@ -1,51 +1,66 @@
 name: Deploy Frontend to VPS
+
 on:
   push:
-    branches: [ main ]  # altera se usar outra branch
+    branches:
+      - main # Define the branch that triggers the deployment
 
 jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
+  deploy:
+    runs-on: ubuntu-latest # The type of runner that the job will run on
 
     steps:
-      # 1. Clona repositório
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4 # Action to check out your repository code
 
-      # 2. Configura Node.js v22.18.0
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4 # Action to set up Node.js environment
         with:
-          node-version: 22.18.0
-          cache: 'npm'
+          node-version: '20' # Specify your Node.js version
 
-      # 3. Instala dependências e builda
-      - name: Install dependencies & build
-        run: |
-          npm ci
-          npm run build
+      - name: Install dependencies
+        run: npm ci # Installs dependencies cleanly, ideal for CI environments
 
-      # 4. Envia build para VPS via SCP
-      - name: Upload build to VPS
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "dist/*"
-          target: "/var/www/html_tmp"
+      - name: Build frontend
+        run: npm run build # Command to build your Vite/React application
+        env:
+          # Pass environment variables required for the production build
+          # These should be configured as GitHub Secrets
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL_PROD }}
+          VITE_UPLOADS_BASE_URL: ${{ secrets.VITE_UPLOADS_BASE_URL_PROD }}
+          VITE_BACKEND_URL: ${{ secrets.VITE_BACKEND_URL_PROD }}
+          VITE_APP_ENV: production
 
-      # 5. Ajusta pastas e ativa nova versão
-      - name: Activate new build
-        uses: appleboy/ssh-action@master
+      # Step 1: Upload build to a temporary directory on VPS using SCP
+      - name: Upload build to VPS via SCP
+        uses: appleboy/scp-action@master # Use scp-action for file transfer
         with:
           host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "dist/" # Source directory on GitHub Actions runner
+          target: "/var/www/html_tmp/" # Temporary destination on VPS
+
+      # Step 2: Activate new build and set permissions using SSH
+      - name: Activate new build on VPS via SSH
+        uses: appleboy/ssh-action@v1.0.0 # Use ssh-action for command execution
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.VPS_PORT }}
           script: |
-            sudo rm -rf /var/www/html_old
-            sudo mv /var/www/html /var/www/html_old || true
-            sudo mv /var/www/html_tmp /var/www/html
-            sudo chown -R www-data:www-data /var/www/html
-            sudo chmod -R 755 /var/www/html
+            echo "Activating new build..."
+            # Remove old backup, move current to old, move temp to current
+            sudo rm -rf /var/www/html_old || true # Remove old backup if exists
+            sudo mv /var/www/html /var/www/html_old || true # Move current to old (ignore error if html doesn't exist)
+            sudo mv /var/www/html_tmp /var/www/html # Move new build to active directory
+
+            echo "Setting file permissions and ownership..."
+            sudo chown -R www-data:www-data /var/www/html/
+            sudo chmod -R 755 /var/www/html/
+
+            echo "Reloading Nginx..."
             sudo systemctl reload nginx
+            echo "Frontend deployed successfully!"

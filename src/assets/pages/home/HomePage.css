@@ -1,0 +1,37 @@
+
+.hero-section {
+  position: relative;
+  height: 80vh; /* Altura da seção */
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: white;
+}
+
+/* Overlay escuro para melhorar a legibilidade do texto */
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5); 
+}
+
+.hero-text {
+  position: relative; /* Garante que o texto fique acima do overlay */
+  z-index: 1;
+  padding: 20px;
+}
+
+.hero-text h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem); /* Tamanho de fonte responsivo */
+  font-weight: bold;
+  margin: 0;
+  line-height: 1.3;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8); /* Sombra no texto */
+}

@@ -1,16 +1,13 @@
 import React, { useMemo, useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import "./HomePage.css"; // Importando o novo CSS
 
 // Importe os componentes utilizados na HomePage
-import FullscreenImageSlider from "../../../components/Slider/FullscreenImageSlider.jsx";
 import GridSection from "../../../components/grid/GridSection.jsx";
 import LocationSection from "../../../components/location/LocationSection.jsx";
 
 // Importe as imagens
-import imgSlider1 from "../../images/slider/slider1.jpg";
-import imgSlider2 from "../../images/slider/slider2.jpg";
-import imgSlider3 from "../../images/slider/slider3.jpg";
-import imgSlider4 from "../../images/slider/slider4.jpg";
+import imgSlider2 from "../../images/slider/slider2.jpg"; // Apenas a imagem necessária
 
 // ATUALIZADO: Importação das novas imagens para os cards
 import missaoIcon from "../../images/esq.png";
@@ -22,17 +19,6 @@ import Footer from "../../../components/footer/Footer.jsx";
 
 const HomePage = () => {
   const location = useLocation();
-
-  // Memoize os dados para evitar recriações desnecessárias
-  const minhasImagens = useMemo(
-    () => [
-      { src: imgSlider1, alt: "Imagem 1" },
-      { src: imgSlider2, alt: "Imagem 2" },
-      { src: imgSlider3, alt: "Imagem 3" },
-      { src: imgSlider4, alt: "Imagem 4" },
-    ],
-    []
-  );
 
   const cardData = useMemo(
     () => [
@@ -105,8 +91,18 @@ const HomePage = () => {
 
   return (
     <div className="scroll-container">
-      <section id="inicio" aria-label="Início - Slider de Imagens">
-        <FullscreenImageSlider images={minhasImagens} />
+      <section
+        id="inicio"
+        className="hero-section"
+        style={{ backgroundImage: `url(${imgSlider2})` }}
+        aria-label="Início"
+      >
+        <div className="hero-text">
+          <h1>
+            Loja João Pedro Junqueira
+            <br />A 43 anos tornando melhores os Homens de Bem!
+          </h1>
+        </div>
       </section>
       <section id="sobre-nos" aria-label="Sobre Nós">
         <GridSection cardTexts={cardData} />

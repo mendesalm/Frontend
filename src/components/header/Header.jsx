@@ -50,53 +50,32 @@ const Header = () => {
         </button>
 
         <nav className={`header-nav ${isMenuOpen ? "active" : ""}`}>
-          <ul>
-            <li>
-              <Link to="/#inicio" onClick={closeMenu}>
-                Início
-              </Link>
-            </li>
-            <li>
-              <Link to="/#sobre-nos" onClick={closeMenu}>
-                Sobre Nós
-              </Link>
-            </li>
-            <li>
-              <Link to="/#localizacao" onClick={closeMenu}>
-                Localização
-              </Link>
-            </li>
-            <li>
-              <Link to="/#contato" onClick={closeMenu}>
-                Contato
-              </Link>
-            </li>
-
+          <ul className="nav-links-public">
+            <li><Link to="/#inicio" onClick={closeMenu}>Início</Link></li>
+            <li><Link to="/#sobre-nos" onClick={closeMenu}>Sobre Nós</Link></li>
+            <li><Link to="/#localizacao" onClick={closeMenu}>Localização</Link></li>
+            <li><Link to="/#contato" onClick={closeMenu}>Contato</Link></li>
+          </ul>
+          <div className="nav-links-auth">
             {isAuthenticated ? (
               <>
-                <li>
-                  <Link to="/dashboard" onClick={closeMenu}>
-                    Área Restrita
-                  </Link>
-                </li>
-                <li>
-                  <a
-                    href="#!"
-                    onClick={handleLogout}
-                    style={{ cursor: "pointer" }}
-                  >
-                    Logout ({user?.NomeCompleto.split(" ")[0]})
-                  </a>
-                </li>
+                <Link to="/dashboard" onClick={closeMenu} className="glass-button">
+                  Área Restrita
+                </Link>
+                <a
+                  href="#!"
+                  onClick={handleLogout}
+                  className="logout-link"
+                >
+                  Logout {user?.NomeCompleto && `(${user.NomeCompleto.split(" ")[0]})`}
+                </a>
               </>
             ) : (
-              <li>
-                <Link to="/login" onClick={closeMenu}>
-                  Login
-                </Link>
-              </li>
+              <Link to="/login" onClick={closeMenu} className="glass-button">
+                Login
+              </Link>
             )}
-          </ul>
+          </div>
         </nav>
       </div>
     </header>

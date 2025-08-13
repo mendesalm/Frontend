@@ -2,3 +2,4 @@
 .env
 node_modules
 nginx_config_for_vps.conf
+/workflows/*

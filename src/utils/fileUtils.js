@@ -23,7 +23,7 @@ export const getFileUrl = (path) => {
 
   // Se for arquivo em /uploads/, serve diretamente do backend (sem /api)
   if (processedPath.startsWith("/uploads/")) {
-    return `${VITE_BACKEND_URL}${processedPath}`;
+    return processedPath;
   }
 
   // Para qualquer outro caso, considera endpoint de API

@@ -2,7 +2,6 @@ const normalizeBaseUrl = (url) => {
   if (!url) return "";
   return url.endsWith("/") ? url.slice(0, -1) : url;
 };
-
 const VITE_BACKEND_URL = normalizeBaseUrl(
   import.meta.env.VITE_BACKEND_URL || ""
 );
@@ -12,27 +11,25 @@ export const getFileUrl = (path) => {
   if (!path) return "#";
   let processedPath = path.trim();
 
-  // Remove a URL completa do backend se estiver incluída
+  // Se já for uma URL absoluta, retorna como está
+  if (/^https?:\/\//i.test(processedPath)) return processedPath;
+
+  // Se vim com full URL do backend, remove isso do início
   if (VITE_BACKEND_URL && processedPath.startsWith(VITE_BACKEND_URL)) {
     processedPath = processedPath.slice(VITE_BACKEND_URL.length);
   }
 
-  // Se já for uma URL absoluta, retorna como está
-  if (/^https?:\/\//i.test(processedPath)) {
-    return processedPath;
+  // `api/uploads` -> remove apenas o `/api` no início, para caso uploads sejam servidos assim
+  if (processedPath.startsWith("/api/uploads/")) {
+    processedPath = processedPath.replace(/^\/api/, "");
   }
 
-  // Remove prefixo /api/ caso exista
-  if (processedPath.startsWith("/api/")) {
-    processedPath = processedPath.slice(4);
-  }
-
-  // Se for arquivo em /uploads/, monta URL plena do backend:
+  // Uploads sempre pelo backend
   if (processedPath.startsWith("/uploads/")) {
     return `${VITE_BACKEND_URL}${processedPath}`;
   }
 
-  // Para qualquer outro caso, considera endpoint da API
+  // Senao, vai para API_BASE_URL
   return `${API_BASE_URL}${
     processedPath.startsWith("/") ? processedPath : `/${processedPath}`
   }`;
